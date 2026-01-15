@@ -36,12 +36,6 @@ body {
   color: white;
 }
 
-.subreddit,
-.time {
-  font-size: 12px;
-  color: #818384;
-}
-
 .post-content {
   margin-top: 12px;
   font-size: 16px;
@@ -58,20 +52,22 @@ body {
   border-top: 1px solid #343536;
   margin-top: 12px;
   padding-top: 10px;
+  position: relative;
 }
 
 .comment-text {
   margin-left: 50px;
   margin-top: 4px;
-}
-
-.clickable,
-.editable {
   cursor: pointer;
 }
 
+.replies {
+  margin-left: 40px;
+  margin-top: 6px;
+}
+
 button {
-  margin-top: 12px;
+  margin-top: 8px;
   background: #272729;
   color: white;
   border: none;
@@ -79,6 +75,7 @@ button {
   border-radius: 4px;
   cursor: pointer;
 }
+
 .user-wrap {
   position: relative;
   display: inline-flex;
@@ -87,7 +84,7 @@ button {
 }
 
 .user-menu {
-  position: relative;
+  position: absolute;
   top: 45px;
   left: 0;
   display: flex;
@@ -103,7 +100,6 @@ button {
 }
 
 .user-menu button {
-  margin-left: 4px;
   background: none;
   border: none;
   color: #d7dadc;
@@ -118,5 +114,5 @@ button {
 }
 
 .user-wrap:hover .user-menu {
-  display: block;
+  display: flex;
 }
