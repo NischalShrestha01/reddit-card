@@ -1,132 +1,193 @@
-/* ===== RANDOM NAMES & PROFILE PICS ===== */
+/* ===== UTIL ===== */
 const NAMES = ["u/ghost_logic","u/voidthinker","u/midnightdev","u/signalnoise","u/404brain","u/halfawake"];
-const randomName = () => NAMES[Math.floor(Math.random() * NAMES.length)];
-const randomPfp = () => `https://i.pravatar.cc/50?img=${Math.floor(Math.random() * 70)}`;
+const randomName = () => NAMES[Math.floor(Math.random()*NAMES.length)];
+const randomPfp = () => `https://i.pravatar.cc/50?img=${Math.floor(Math.random()*70)}`;
 
-/* ===== DEFAULT DATA ===== */
+/* ===== DEFAULT ===== */
 const DEFAULT_DATA = {
   post: {
     user: "u/BoxMorton",
     pfp: randomPfp(),
     text: "Why would the Grim Reaper need a scythe if he can kill people by just touching them?",
-    upvotes: "⬆ 133",
-    commentsCount: "💬 95"
+    image: null,
+    upvotes: 133,
+    comments: 0
   },
   comments: []
 };
 
-/* ===== LOAD DATA SAFELY ===== */
+/* ===== STORAGE ===== */
 function loadData() {
-  let stored = null;
-  try { stored = JSON.parse(localStorage.getItem("redditCard")); } catch(e) { stored = null; }
-
-  if(!stored || !stored.post || typeof stored.post.text !== "string") return JSON.parse(JSON.stringify(DEFAULT_DATA));
-
-  const post = { ...DEFAULT_DATA.post, ...stored.post };
-  const comments = Array.isArray(stored.comments) ? stored.comments : [];
-  return { post, comments };
+  try {
+    const d = JSON.parse(localStorage.getItem("redditCard"));
+    if (!d?.post?.text) throw 0;
+    return d;
+  } catch {
+    return structuredClone(DEFAULT_DATA);
+  }
 }
-
 const data = loadData();
-function save() { localStorage.setItem("redditCard", JSON.stringify(data)); }
+const save = () => localStorage.setItem("redditCard", JSON.stringify(data));
 
-/* ===== USER BLOCK WITH HOVER MENU ===== */
-function userBlock(userObj, rerender) {
-  const wrap = document.createElement("div");
-  wrap.className = "user-wrap";
+/* ===== USER BLOCK ===== */
+function userBlock(obj, rerender) {
+  const w = document.createElement("div");
+  w.className = "user-wrap";
 
-  wrap.innerHTML = `
-    <img class="pfp" src="${userObj.pfp}">
-    <span class="username">${userObj.user}</span>
+  w.innerHTML = `
+    <img class="pfp" src="${obj.pfp}">
+    <span class="username">${obj.user}</span>
     <div class="user-menu">
-      <button class="rand">🎲 Random</button>
-      <button class="link">🔗 Set image</button>
+      <button title="Random user">🎲</button>
+      <button title="Set avatar">🔗</button>
+      <button title="Attach image">🖼</button>
     </div>
   `;
 
-  const menu = wrap.querySelector(".user-menu");
-
-  wrap.querySelector(".rand").onclick = () => {
-    userObj.user = randomName(); userObj.pfp = randomPfp(); save(); rerender();
-  };
-  wrap.querySelector(".link").onclick = () => {
-    const url = prompt("Paste image URL:");
-    if(url){ userObj.pfp=url; save(); rerender(); }
+  // random user
+  w.querySelector("button:nth-child(1)").onclick = () => {
+    obj.user = randomName();
+    obj.pfp = randomPfp();
+    save(); rerender();
   };
 
-  return wrap;
+  // set avatar
+  w.querySelector("button:nth-child(2)").onclick = () => {
+    const u = prompt("Avatar image URL:");
+    if (u) { obj.pfp = u; save(); rerender(); }
+  };
+
+  // attach image to post/comment/reply
+  w.querySelector("button:nth-child(3)").onclick = () => {
+    const img = prompt("Attach image URL:");
+    if (img !== null) {
+      obj.image = img || null;
+      save(); rerender();
+    }
+  };
+
+  return w;
 }
 
-/* ===== RENDER POST ===== */
+/* ===== POST ===== */
 function renderPost() {
-  const header = document.getElementById("postHeader");
-  header.innerHTML = "";
-  header.appendChild(userBlock(data.post, renderAll));
+  const h = document.getElementById("postHeader");
+  h.innerHTML = "";
+  h.appendChild(userBlock(data.post, renderAll));
 
-  const postTextEl = document.getElementById("postText");
-  postTextEl.textContent = data.post.text;
-  document.getElementById("upvotes").textContent = data.post.upvotes;
-  document.getElementById("commentsCount").textContent = data.post.commentsCount;
-
-  postTextEl.onclick = () => {
-    const v = prompt("Edit post text:", data.post.text);
-    if(v !== null){ data.post.text = v; save(); renderPost(); }
-  };
-}
-
-/* ===== RECURSIVE COMMENT RENDER ===== */
-function renderComment(c, rerender){
-  const div = document.createElement("div");
-  div.className = "comment";
-
-  const header = document.createElement("div");
-  header.className = "comment-header";
-  header.appendChild(userBlock(c, rerender));
-
-  const text = document.createElement("div");
-  text.className = "comment-text";
-  text.textContent = c.text;
-  text.onclick = () => { const v = prompt("Edit comment:", c.text); if(v!==null){ c.text=v; save(); rerender(); } };
-
-  const replyBtn = document.createElement("button");
-  replyBtn.textContent = "Reply";
-  replyBtn.onclick = () => {
-    c.replies = c.replies || [];
-    c.replies.push({ user: randomName(), pfp: randomPfp(), text: "New reply", replies: [] });
-    save();
-    rerender();
+  const t = document.getElementById("postText");
+  t.textContent = data.post.text;
+  t.onclick = () => {
+    const v = prompt("Edit post:", data.post.text);
+    if (v !== null) { data.post.text = v; save(); renderPost(); }
   };
 
-  div.appendChild(header);
-  div.appendChild(text);
-  div.appendChild(replyBtn);
-
-  const repliesContainer = document.createElement("div");
-  repliesContainer.className = "replies";
-  if(c.replies && c.replies.length>0){
-    c.replies.forEach(r => { repliesContainer.appendChild(renderComment(r, rerender)); });
+  const imgWrap = document.createElement("div");
+  if (data.post.image) {
+    imgWrap.className = "post-image";
+    imgWrap.innerHTML = `<img src="${data.post.image}">`;
+    t.after(imgWrap);
   }
-  div.appendChild(repliesContainer);
 
-  return div;
+  const u = document.getElementById("upvotes");
+  u.textContent = `⬆ ${data.post.upvotes}`;
+  u.onclick = () => {
+    const v = prompt("Upvotes:", data.post.upvotes);
+    if (!isNaN(v)) { data.post.upvotes = +v; save(); renderPost(); }
+  };
+
+  const c = document.getElementById("commentsCount");
+  c.textContent = `💬 ${data.post.comments}`;
 }
 
-/* ===== RENDER ALL COMMENTS ===== */
-function renderComments(){
-  const container = document.getElementById("comments");
-  container.innerHTML="";
-  data.comments.forEach(c => container.appendChild(renderComment(c, renderAll)));
+/* ===== COMMENT (RECURSIVE) ===== */
+function renderComment(c) {
+  const d = document.createElement("div");
+  d.className = "comment";
+
+  const h = document.createElement("div");
+  h.className = "comment-header";
+  h.appendChild(userBlock(c, renderAll));
+
+  const txt = document.createElement("div");
+  txt.className = "comment-text";
+  txt.textContent = c.text;
+  txt.onclick = () => {
+    const v = prompt("Edit comment:", c.text);
+    if (v !== null) { c.text = v; save(); renderAll(); }
+  };
+
+  d.append(h, txt);
+
+  if (c.image) {
+    const img = document.createElement("div");
+    img.className = "comment-image";
+    img.innerHTML = `<img src="${c.image}">`;
+    d.appendChild(img);
+  }
+
+  const f = document.createElement("div");
+  f.className = "comment-footer";
+
+  const up = document.createElement("span");
+  up.className = "meta";
+  up.textContent = `⬆ ${c.upvotes}`;
+  up.onclick = () => {
+    const v = prompt("Upvotes:", c.upvotes);
+    if (!isNaN(v)) { c.upvotes = +v; save(); renderAll(); }
+  };
+
+  const cm = document.createElement("span");
+  cm.className = "meta";
+  cm.textContent = `💬 ${c.replies.length}`;
+  cm.onclick = () => {
+    c.replies.push({
+      user: randomName(),
+      pfp: randomPfp(),
+      text: "New reply",
+      image: null,
+      upvotes: 0,
+      replies: []
+    });
+    data.post.comments++;
+    save(); renderAll();
+  };
+
+  f.append(up, cm);
+  d.appendChild(f);
+
+  const r = document.createElement("div");
+  r.className = "replies";
+  c.replies.forEach(x => r.appendChild(renderComment(x)));
+  d.appendChild(r);
+
+  return d;
 }
 
-/* ===== ADD TOP-LEVEL COMMENT ===== */
+/* ===== COMMENTS ===== */
+function renderComments() {
+  const c = document.getElementById("comments");
+  c.innerHTML = "";
+  data.comments.forEach(x => c.appendChild(renderComment(x)));
+}
+
+/* ===== ADD COMMENT ===== */
 document.getElementById("addCommentBtn").onclick = () => {
-  data.comments.push({ user: randomName(), pfp: randomPfp(), text: "New comment", replies: [] });
-  save();
-  renderAll();
+  data.comments.push({
+    user: randomName(),
+    pfp: randomPfp(),
+    text: "New comment",
+    image: null,
+    upvotes: 0,
+    replies: []
+  });
+  data.post.comments++;
+  save(); renderAll();
 };
 
-/* ===== MASTER RENDER ===== */
-function renderAll(){ renderPost(); renderComments(); }
-
-/* ===== INITIAL RENDER ===== */
+/* ===== MASTER ===== */
+function renderAll() {
+  renderPost();
+  renderComments();
+}
 renderAll();

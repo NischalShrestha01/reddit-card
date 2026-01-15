@@ -39,20 +39,26 @@ body {
 .post-content {
   margin-top: 12px;
   font-size: 16px;
+  cursor: pointer;
 }
 
-.post-footer {
-  margin-top: 10px;
+.post-footer,
+.comment-footer {
+  margin-top: 6px;
   display: flex;
-  gap: 20px;
+  gap: 16px;
   color: #818384;
+  font-size: 14px;
+}
+
+.meta {
+  cursor: pointer;
 }
 
 .comment {
   border-top: 1px solid #343536;
   margin-top: 12px;
   padding-top: 10px;
-  position: relative;
 }
 
 .comment-text {
@@ -67,7 +73,7 @@ body {
 }
 
 button {
-  margin-top: 8px;
+  margin-top: 12px;
   background: #272729;
   color: white;
   border: none;
@@ -87,16 +93,13 @@ button {
   position: absolute;
   top: 45px;
   left: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
   background: #272729;
   border: 1px solid #343536;
   border-radius: 6px;
   padding: 4px;
   display: none;
+  gap: 6px;
   z-index: 10;
-  white-space: nowrap;
 }
 
 .user-menu button {
@@ -104,7 +107,6 @@ button {
   border: none;
   color: #d7dadc;
   font-size: 12px;
-  padding: 4px 6px;
   cursor: pointer;
 }
 
@@ -115,4 +117,18 @@ button {
 
 .user-wrap:hover .user-menu {
   display: flex;
+}
+.comment-image,
+.post-image {
+  margin-top: 8px;
+  margin-left: 50px;
+  max-width: 90%;
+  border-radius: 6px;
+  border: 1px solid #343536;
+}
+
+.comment-image img,
+.post-image img {
+  width: 100%;
+  display: block;
 }
