@@ -29,8 +29,21 @@ function loadData() {
 const data = loadData();
 const save = () => localStorage.setItem("redditCard", JSON.stringify(data));
 
+/* ===== DELETE HELPERS ===== */
+function countAllReplies(node) {
+  return node.replies.reduce((n, r) => n + 1 + countAllReplies(r), 0);
+}
+
+function deleteNode(list, node) {
+  const i = list.indexOf(node);
+  if (i !== -1) {
+    const removed = list.splice(i, 1)[0];
+    data.post.comments -= 1 + countAllReplies(removed);
+  }
+}
+
 /* ===== USER BLOCK ===== */
-function userBlock(obj, rerender) {
+function userBlock(obj, rerender, parentList = null) {
   const w = document.createElement("div");
   w.className = "user-wrap";
 
@@ -41,30 +54,42 @@ function userBlock(obj, rerender) {
       <button title="Random user">🎲</button>
       <button title="Set avatar">🔗</button>
       <button title="Attach image">🖼</button>
+      ${parentList ? `<button title="Delete">🗑</button>` : ""}
     </div>
   `;
 
-  // random user
-  w.querySelector("button:nth-child(1)").onclick = () => {
+  const buttons = w.querySelectorAll("button");
+
+  // 🎲 random
+  buttons[0].onclick = () => {
     obj.user = randomName();
     obj.pfp = randomPfp();
     save(); rerender();
   };
 
-  // set avatar
-  w.querySelector("button:nth-child(2)").onclick = () => {
+  // 🔗 avatar
+  buttons[1].onclick = () => {
     const u = prompt("Avatar image URL:");
     if (u) { obj.pfp = u; save(); rerender(); }
   };
 
-  // attach image to post/comment/reply
-  w.querySelector("button:nth-child(3)").onclick = () => {
-    const img = prompt("Attach image URL:");
+  // 🖼 image
+  buttons[2].onclick = () => {
+    const img = prompt("Attach image URL (empty removes):");
     if (img !== null) {
       obj.image = img || null;
       save(); rerender();
     }
   };
+
+  // 🗑 delete (comments/replies only)
+  if (parentList) {
+    buttons[3].onclick = () => {
+      if (!confirm("Delete this comment and all replies?")) return;
+      deleteNode(parentList, obj);
+      save(); rerender();
+    };
+  }
 
   return w;
 }
@@ -82,11 +107,12 @@ function renderPost() {
     if (v !== null) { data.post.text = v; save(); renderPost(); }
   };
 
-  const imgWrap = document.createElement("div");
+  document.querySelector(".post-image")?.remove();
   if (data.post.image) {
-    imgWrap.className = "post-image";
-    imgWrap.innerHTML = `<img src="${data.post.image}">`;
-    t.after(imgWrap);
+    const img = document.createElement("div");
+    img.className = "post-image";
+    img.innerHTML = `<img src="${data.post.image}">`;
+    t.after(img);
   }
 
   const u = document.getElementById("upvotes");
@@ -96,18 +122,17 @@ function renderPost() {
     if (!isNaN(v)) { data.post.upvotes = +v; save(); renderPost(); }
   };
 
-  const c = document.getElementById("commentsCount");
-  c.textContent = `💬 ${data.post.comments}`;
+  document.getElementById("commentsCount").textContent = `💬 ${data.post.comments}`;
 }
 
 /* ===== COMMENT (RECURSIVE) ===== */
-function renderComment(c) {
+function renderComment(c, parentList) {
   const d = document.createElement("div");
   d.className = "comment";
 
   const h = document.createElement("div");
   h.className = "comment-header";
-  h.appendChild(userBlock(c, renderAll));
+  h.appendChild(userBlock(c, renderAll, parentList));
 
   const txt = document.createElement("div");
   txt.className = "comment-text";
@@ -158,7 +183,7 @@ function renderComment(c) {
 
   const r = document.createElement("div");
   r.className = "replies";
-  c.replies.forEach(x => r.appendChild(renderComment(x)));
+  c.replies.forEach(x => r.appendChild(renderComment(x, c.replies)));
   d.appendChild(r);
 
   return d;
@@ -168,10 +193,10 @@ function renderComment(c) {
 function renderComments() {
   const c = document.getElementById("comments");
   c.innerHTML = "";
-  data.comments.forEach(x => c.appendChild(renderComment(x)));
+  data.comments.forEach(x => c.appendChild(renderComment(x, data.comments)));
 }
 
-/* ===== ADD COMMENT ===== */
+/* ===== ADD / CLEAR ===== */
 document.getElementById("addCommentBtn").onclick = () => {
   data.comments.push({
     user: randomName(),
@@ -184,6 +209,17 @@ document.getElementById("addCommentBtn").onclick = () => {
   data.post.comments++;
   save(); renderAll();
 };
+
+// Clear all comments (dev-style)
+const clearBtn = document.createElement("button");
+clearBtn.textContent = "🧹 Clear All Comments";
+clearBtn.onclick = () => {
+  if (!confirm("Delete ALL comments?")) return;
+  data.comments = [];
+  data.post.comments = 0;
+  save(); renderAll();
+};
+document.querySelector(".post-container").appendChild(clearBtn);
 
 /* ===== MASTER ===== */
 function renderAll() {
