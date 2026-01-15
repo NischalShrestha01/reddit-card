@@ -1,4 +1,5 @@
 /* ===== GLOBAL ===== */
+* { box-sizing: border-box; }
 body {
   margin: 0;
   padding: 20px;
@@ -7,29 +8,27 @@ body {
   font-family: Arial, sans-serif;
 }
 
-/* REMOVE FLEX CENTERING (BREAKS MOBILE SCROLL) */
 .post-container {
   max-width: 600px;
   margin: 0 auto;
   background: #020617;
   padding: 16px;
   border-radius: 10px;
+  position: relative;
 }
 
-/* ===== USER ===== */
+/* ===== USER WRAP ===== */
 .user-wrap {
   display: flex;
   align-items: center;
   gap: 8px;
   position: relative;
 }
-
 .pfp {
   width: 32px;
   height: 32px;
   border-radius: 50%;
 }
-
 .username {
   cursor: pointer;
   font-weight: bold;
@@ -47,11 +46,8 @@ body {
   gap: 4px;
   z-index: 5;
 }
-
-.user-wrap:hover .user-menu {
-  display: flex;
-}
-
+.user-wrap:hover .user-menu { display: flex; }
+.user-wrap.force-hover .user-menu { display: flex; }
 .user-menu button {
   background: none;
   border: none;
@@ -60,72 +56,51 @@ body {
 }
 
 /* ===== POST / COMMENT ===== */
-.editable {
-  cursor: pointer;
-  margin-top: 8px;
-}
-
-.comment {
-  margin-top: 12px;
-  padding-left: 14px;
-  border-left: 1px solid #334155;
-}
-
-/* ===== FOOTERS ===== */
-.post-footer,
-.comment-footer {
-  display: flex;
-  gap: 12px;
-  margin-top: 6px;
-}
-
-.meta {
-  cursor: pointer;
-  opacity: 0.85;
-}
-
-.meta:hover {
-  opacity: 1;
-}
+.editable { cursor: pointer; margin-top: 8px; }
+.comment { margin-top: 12px; padding-left: 14px; border-left: 1px solid #334155; }
+.post-footer, .comment-footer { display: flex; gap: 12px; margin-top: 6px; }
+.meta { cursor: pointer; opacity: 0.85; }
+.meta:hover { opacity: 1; }
 
 /* ===== IMAGES ===== */
-.post-image img,
-.comment-image img {
-  max-width: 100%;
-  margin-top: 8px;
-  border-radius: 8px;
-}
+.post-image img, .comment-image img { max-width: 100%; margin-top: 8px; border-radius: 8px; }
 
 /* ===== REPLIES ===== */
-.replies {
-  margin-top: 6px;
-}
+.replies { margin-top: 6px; }
 
-/* ===== ADD COMMENT (HOVER-ONLY) ===== */
+/* ===== ADD COMMENT BUTTON ===== */
 #addCommentBtn {
-  margin-top: 12px;
+  display: block;
   padding: 6px 10px;
   border-radius: 6px;
   border: none;
   background: #1e293b;
   color: white;
   cursor: pointer;
-
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
+  height: 0; margin: 0; padding-top: 0; padding-bottom: 0;
+  opacity: 0; pointer-events: none; transform: translateY(-6px);
+  transition: all 0.2s ease; overflow: hidden;
 }
-
-/* Desktop hover */
 .post-container:hover #addCommentBtn {
-  opacity: 1;
-  pointer-events: auto;
+  height: auto; margin-top: 12px; padding-top: 6px; padding-bottom: 6px;
+  opacity: 1; pointer-events: auto; transform: translateY(0);
 }
-
-/* Mobile fallback (no hover devices) */
 @media (hover: none) {
   #addCommentBtn {
-    opacity: 1;
-    pointer-events: auto;
+    height: auto; margin-top: 12px; padding-top: 6px; padding-bottom: 6px;
+    opacity: 1; pointer-events: auto; transform: none;
   }
 }
+
+/* ===== CLEAR COMMENTS BUTTON ===== */
+#clearCommentsBtn {
+  display: block;
+  padding: 6px 10px;
+  margin-top: 12px;
+  border-radius: 6px;
+  border: none;
+  background: #8b0000;
+  color: white;
+  cursor: pointer;
+}
+#clearCommentsBtn:hover { background: #ff4c4c; }
