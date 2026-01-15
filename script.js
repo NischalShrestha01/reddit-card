@@ -1,37 +1,57 @@
-const names = [
+/* ===== RANDOM NAMES & PROFILE PICS ===== */
+const NAMES = [
   "u/ghost_logic", "u/voidthinker", "u/midnightdev",
   "u/signalnoise", "u/404brain", "u/halfawake"
 ];
 
-function randomName() {
-  return names[Math.floor(Math.random() * names.length)];
-}
+const randomName = () =>
+  NAMES[Math.floor(Math.random() * NAMES.length)];
 
-function randomPfp() {
-  return `https://i.pravatar.cc/50?img=${Math.floor(Math.random() * 70)}`;
-}
+const randomPfp = () =>
+  `https://i.pravatar.cc/50?img=${Math.floor(Math.random() * 70)}`;
 
-const data = JSON.parse(localStorage.getItem("redditCard")) || {
+/* ===== DEFAULT DATA ===== */
+const DEFAULT_DATA = {
   post: {
     user: "u/BoxMorton",
     pfp: randomPfp(),
     text: "Why would the Grim Reaper need a scythe if he can kill people by just touching them?",
     upvotes: "⬆ 133",
-    comments: "💬 95"
+    commentsCount: "💬 95"
   },
   comments: []
 };
 
+/* ===== LOAD DATA SAFELY ===== */
+function loadData() {
+  let stored = null;
+  try {
+    stored = JSON.parse(localStorage.getItem("redditCard"));
+  } catch (e) {
+    stored = null;
+  }
+
+  // Ensure required structure exists
+  if (!stored || !stored.post || typeof stored.post.text !== "string") {
+    return JSON.parse(JSON.stringify(DEFAULT_DATA));
+  }
+
+  // Merge stored post with default post (to fill missing fields)
+  const post = { ...DEFAULT_DATA.post, ...stored.post };
+  const comments = Array.isArray(stored.comments) ? stored.comments : [];
+
+  return { post, comments };
+}
+
+const data = loadData();
+
+/* ===== SAVE FUNCTION ===== */
 function save() {
   localStorage.setItem("redditCard", JSON.stringify(data));
 }
 
-/* POST RENDER */
-document.querySelector(".post-content").textContent = data.post.text;
-document.querySelector("[data-key='upvotes']").textContent = data.post.upvotes;
-document.querySelector("[data-key='commentsCount']").textContent = data.post.comments;
-
-function userBlock(userObj, onUpdate) {
+/* ===== USER BLOCK ===== */
+function userBlock(userObj, rerender) {
   const wrap = document.createElement("div");
   wrap.className = "user-wrap";
 
@@ -44,30 +64,50 @@ function userBlock(userObj, onUpdate) {
     </div>
   `;
 
+  // Randomize username + pfp
   wrap.querySelector(".rand").onclick = () => {
     userObj.user = randomName();
     userObj.pfp = randomPfp();
     save();
-    onUpdate();
+    rerender();
   };
 
+  // Set custom image
   wrap.querySelector(".link").onclick = () => {
     const url = prompt("Paste image URL:");
     if (url) {
       userObj.pfp = url;
       save();
-      onUpdate();
+      rerender();
     }
   };
 
   return wrap;
 }
 
-/* POST HEADER USER */
-const postHeader = document.querySelector(".post-header");
-postHeader.prepend(userBlock(data.post, () => location.reload()));
+/* ===== RENDER POST ===== */
+function renderPost() {
+  const header = document.getElementById("postHeader");
+  header.innerHTML = "";
+  header.appendChild(userBlock(data.post, renderAll));
 
-/* COMMENTS */
+  const postTextEl = document.getElementById("postText");
+  postTextEl.textContent = data.post.text;
+  document.getElementById("upvotes").textContent = data.post.upvotes;
+  document.getElementById("commentsCount").textContent = data.post.commentsCount;
+
+  // Edit post text
+  postTextEl.onclick = () => {
+    const v = prompt("Edit post text:", data.post.text);
+    if (v !== null) { // allow empty string
+      data.post.text = v;
+      save();
+      renderPost();
+    }
+  };
+}
+
+/* ===== RENDER COMMENTS ===== */
 function renderComments() {
   const container = document.getElementById("comments");
   container.innerHTML = "";
@@ -78,14 +118,15 @@ function renderComments() {
 
     const header = document.createElement("div");
     header.className = "comment-header";
-    header.appendChild(userBlock(c, renderComments));
+    header.appendChild(userBlock(c, renderAll));
 
     const text = document.createElement("div");
-    text.className = "comment-text editable";
+    text.className = "comment-text";
     text.textContent = c.text;
+
     text.onclick = () => {
       const v = prompt("Edit comment:", c.text);
-      if (v) {
+      if (v !== null) {
         c.text = v;
         save();
         renderComments();
@@ -98,9 +139,7 @@ function renderComments() {
   });
 }
 
-renderComments();
-
-/* ADD COMMENT */
+/* ===== ADD COMMENT ===== */
 document.getElementById("addCommentBtn").onclick = () => {
   data.comments.push({
     user: randomName(),
@@ -108,5 +147,14 @@ document.getElementById("addCommentBtn").onclick = () => {
     text: "New comment"
   });
   save();
-  renderComments();
+  renderAll(); // full render to keep comments + post in sync
 };
+
+/* ===== MASTER RENDER ===== */
+function renderAll() {
+  renderPost();
+  renderComments();
+}
+
+/* ===== INITIAL RENDER ===== */
+renderAll();
