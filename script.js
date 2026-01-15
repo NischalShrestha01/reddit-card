@@ -1,58 +1,73 @@
-const defaults = {
-  postUser: "u/BoxMorton",
-  postPfp: "https://i.pravatar.cc/60?img=12",
-  postText: "Why would the Grim Reaper need a scythe if he can kill people by just touching them?",
-  upvotes: "⬆ 133",
-  commentsCount: "💬 95",
-  comments: [
-    {
-      user: "ddrober2003",
-      pfp: "https://i.pravatar.cc/50?img=32",
-      text: "Because he is the Grim Reaper and he needs a scythe to reap."
-    }
-  ]
+const names = [
+  "u/ghost_logic", "u/voidthinker", "u/midnightdev",
+  "u/signalnoise", "u/404brain", "u/halfawake"
+];
+
+function randomName() {
+  return names[Math.floor(Math.random() * names.length)];
+}
+
+function randomPfp() {
+  return `https://i.pravatar.cc/50?img=${Math.floor(Math.random() * 70)}`;
+}
+
+const data = JSON.parse(localStorage.getItem("redditCard")) || {
+  post: {
+    user: "u/BoxMorton",
+    pfp: randomPfp(),
+    text: "Why would the Grim Reaper need a scythe if he can kill people by just touching them?",
+    upvotes: "⬆ 133",
+    comments: "💬 95"
+  },
+  comments: []
 };
 
-// Load or initialize
-const data = JSON.parse(localStorage.getItem("redditCard")) || defaults;
-localStorage.setItem("redditCard", JSON.stringify(data));
-
-// Helper save
 function save() {
   localStorage.setItem("redditCard", JSON.stringify(data));
 }
 
-// Load post
-document.querySelectorAll("[data-key]").forEach(el => {
-  const key = el.dataset.key;
-  if (el.tagName === "IMG") el.src = data[key];
-  else el.textContent = data[key];
-});
+/* POST RENDER */
+document.querySelector(".post-content").textContent = data.post.text;
+document.querySelector("[data-key='upvotes']").textContent = data.post.upvotes;
+document.querySelector("[data-key='commentsCount']").textContent = data.post.comments;
 
-// Editable fields
-document.querySelectorAll(".editable").forEach(el => {
-  el.addEventListener("click", () => {
-    const key = el.dataset.key;
-    const value = prompt("Edit value:", data[key]);
-    if (value) {
-      data[key] = value;
-      el.textContent = value;
-      save();
-    }
-  });
-});
+function userBlock(userObj, onUpdate) {
+  const wrap = document.createElement("div");
+  wrap.className = "user-wrap";
 
-// Editable PFP
-document.querySelector(".pfp").addEventListener("click", () => {
-  const url = prompt("Enter image URL:", data.postPfp);
-  if (url) {
-    data.postPfp = url;
-    document.querySelector(".pfp").src = url;
+  wrap.innerHTML = `
+    <img class="pfp" src="${userObj.pfp}">
+    <span class="username">${userObj.user}</span>
+    <div class="user-menu">
+      <button class="rand">🎲 Random</button>
+      <button class="link">🔗 Set image</button>
+    </div>
+  `;
+
+  wrap.querySelector(".rand").onclick = () => {
+    userObj.user = randomName();
+    userObj.pfp = randomPfp();
     save();
-  }
-});
+    onUpdate();
+  };
 
-// Render comments
+  wrap.querySelector(".link").onclick = () => {
+    const url = prompt("Paste image URL:");
+    if (url) {
+      userObj.pfp = url;
+      save();
+      onUpdate();
+    }
+  };
+
+  return wrap;
+}
+
+/* POST HEADER USER */
+const postHeader = document.querySelector(".post-header");
+postHeader.prepend(userBlock(data.post, () => location.reload()));
+
+/* COMMENTS */
 function renderComments() {
   const container = document.getElementById("comments");
   container.innerHTML = "";
@@ -61,43 +76,35 @@ function renderComments() {
     const div = document.createElement("div");
     div.className = "comment";
 
-    div.innerHTML = `
-      <div class="comment-header">
-        <img class="pfp clickable" src="${c.pfp}" />
-        <span class="username clickable">${c.user}</span>
-      </div>
-      <div class="comment-text editable">${c.text}</div>
-    `;
+    const header = document.createElement("div");
+    header.className = "comment-header";
+    header.appendChild(userBlock(c, renderComments));
 
-    // Edit username
-    div.querySelector(".username").onclick = () => {
-      const v = prompt("Username:", c.user);
-      if (v) { c.user = v; save(); renderComments(); }
+    const text = document.createElement("div");
+    text.className = "comment-text editable";
+    text.textContent = c.text;
+    text.onclick = () => {
+      const v = prompt("Edit comment:", c.text);
+      if (v) {
+        c.text = v;
+        save();
+        renderComments();
+      }
     };
 
-    // Edit text
-    div.querySelector(".comment-text").onclick = () => {
-      const v = prompt("Comment:", c.text);
-      if (v) { c.text = v; save(); renderComments(); }
-    };
-
-    // Edit pfp
-    div.querySelector(".pfp").onclick = () => {
-      const v = prompt("PFP URL:", c.pfp);
-      if (v) { c.pfp = v; save(); renderComments(); }
-    };
-
+    div.appendChild(header);
+    div.appendChild(text);
     container.appendChild(div);
   });
 }
 
 renderComments();
 
-// Add new comment
+/* ADD COMMENT */
 document.getElementById("addCommentBtn").onclick = () => {
   data.comments.push({
-    user: "new_user",
-    pfp: "https://i.pravatar.cc/50",
+    user: randomName(),
+    pfp: randomPfp(),
     text: "New comment"
   });
   save();

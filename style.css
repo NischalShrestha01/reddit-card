@@ -79,3 +79,40 @@ button {
   border-radius: 4px;
   cursor: pointer;
 }
+.user-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.user-menu {
+  position: absolute;
+  top: 45px;
+  left: 0;
+  background: #272729;
+  border: 1px solid #343536;
+  border-radius: 6px;
+  padding: 4px;
+  display: none;
+  z-index: 10;
+  white-space: nowrap;
+}
+
+.user-menu button {
+  background: none;
+  border: none;
+  color: #d7dadc;
+  font-size: 12px;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.user-menu button:hover {
+  background: #343536;
+  border-radius: 4px;
+}
+
+.user-wrap:hover .user-menu {
+  display: block;
+}
