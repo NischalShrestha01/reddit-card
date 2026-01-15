@@ -1,10 +1,10 @@
 /* ===== UTIL ===== */
-const NAMES = ["u/ghost_logic","u/voidthinker","u/midnightdev","u/signalnoise","u/404brain","u/halfawake"];
+const NAMES = ["u/ghost_logic","u/voidthinker","u/midnightdev","u/signalnoise","u/404brain"];
 const randomName = () => NAMES[Math.floor(Math.random()*NAMES.length)];
 const randomPfp = () => `https://i.pravatar.cc/50?img=${Math.floor(Math.random()*70)}`;
 
 /* ===== DEFAULT ===== */
-const DEFAULT_DATA = {
+const DEFAULT = {
   post: {
     user: "u/BoxMorton",
     pfp: randomPfp(),
@@ -17,33 +17,23 @@ const DEFAULT_DATA = {
 };
 
 /* ===== STORAGE ===== */
-function loadData() {
+function load() {
   try {
     const d = JSON.parse(localStorage.getItem("redditCard"));
     if (!d?.post?.text) throw 0;
     return d;
   } catch {
-    return structuredClone(DEFAULT_DATA);
+    return structuredClone(DEFAULT);
   }
 }
-const data = loadData();
+const data = load();
 const save = () => localStorage.setItem("redditCard", JSON.stringify(data));
 
-/* ===== DELETE HELPERS ===== */
-function countAllReplies(node) {
-  return node.replies.reduce((n, r) => n + 1 + countAllReplies(r), 0);
-}
-
-function deleteNode(list, node) {
-  const i = list.indexOf(node);
-  if (i !== -1) {
-    const removed = list.splice(i, 1)[0];
-    data.post.comments -= 1 + countAllReplies(removed);
-  }
-}
+/* ===== HELPERS ===== */
+const countReplies = n => n.replies.reduce((a,b)=>a+1+countReplies(b),0);
 
 /* ===== USER BLOCK ===== */
-function userBlock(obj, rerender, parentList = null) {
+function userBlock(obj, rerender, parent=null) {
   const w = document.createElement("div");
   w.className = "user-wrap";
 
@@ -51,42 +41,37 @@ function userBlock(obj, rerender, parentList = null) {
     <img class="pfp" src="${obj.pfp}">
     <span class="username">${obj.user}</span>
     <div class="user-menu">
-      <button title="Random user">🎲</button>
-      <button title="Set avatar">🔗</button>
-      <button title="Attach image">🖼</button>
-      ${parentList ? `<button title="Delete">🗑</button>` : ""}
+      <button title="Random">🎲</button>
+      <button title="Avatar">🔗</button>
+      <button title="Image">🖼</button>
+      ${parent ? `<button title="Delete">🗑</button>` : ""}
     </div>
   `;
 
-  const buttons = w.querySelectorAll("button");
-
-  // 🎲 random
-  buttons[0].onclick = () => {
-    obj.user = randomName();
-    obj.pfp = randomPfp();
-    save(); rerender();
+  // ✅ FIX: username editable
+  w.querySelector(".username").onclick = () => {
+    const n = prompt("Edit username:", obj.user);
+    if (n) { obj.user = n; save(); rerender(); }
   };
 
-  // 🔗 avatar
-  buttons[1].onclick = () => {
-    const u = prompt("Avatar image URL:");
+  const [rnd, ava, img, del] = w.querySelectorAll("button");
+
+  rnd.onclick = () => { obj.user = randomName(); obj.pfp = randomPfp(); save(); rerender(); };
+  ava.onclick = () => {
+    const u = prompt("Avatar URL:");
     if (u) { obj.pfp = u; save(); rerender(); }
   };
-
-  // 🖼 image
-  buttons[2].onclick = () => {
-    const img = prompt("Attach image URL (empty removes):");
-    if (img !== null) {
-      obj.image = img || null;
-      save(); rerender();
-    }
+  img.onclick = () => {
+    const i = prompt("Image URL (empty removes):");
+    if (i !== null) { obj.image = i || null; save(); rerender(); }
   };
 
-  // 🗑 delete (comments/replies only)
-  if (parentList) {
-    buttons[3].onclick = () => {
-      if (!confirm("Delete this comment and all replies?")) return;
-      deleteNode(parentList, obj);
+  if (del) {
+    del.onclick = () => {
+      if (!confirm("Delete?")) return;
+      const idx = parent.indexOf(obj);
+      data.post.comments -= 1 + countReplies(obj);
+      parent.splice(idx,1);
       save(); rerender();
     };
   }
@@ -104,15 +89,15 @@ function renderPost() {
   t.textContent = data.post.text;
   t.onclick = () => {
     const v = prompt("Edit post:", data.post.text);
-    if (v !== null) { data.post.text = v; save(); renderPost(); }
+    if (v) { data.post.text = v; save(); renderPost(); }
   };
 
   document.querySelector(".post-image")?.remove();
   if (data.post.image) {
-    const img = document.createElement("div");
-    img.className = "post-image";
-    img.innerHTML = `<img src="${data.post.image}">`;
-    t.after(img);
+    const i = document.createElement("div");
+    i.className = "post-image";
+    i.innerHTML = `<img src="${data.post.image}">`;
+    t.after(i);
   }
 
   const u = document.getElementById("upvotes");
@@ -125,30 +110,29 @@ function renderPost() {
   document.getElementById("commentsCount").textContent = `💬 ${data.post.comments}`;
 }
 
-/* ===== COMMENT (RECURSIVE) ===== */
-function renderComment(c, parentList) {
+/* ===== COMMENT ===== */
+function renderComment(c, list) {
   const d = document.createElement("div");
   d.className = "comment";
 
   const h = document.createElement("div");
-  h.className = "comment-header";
-  h.appendChild(userBlock(c, renderAll, parentList));
+  h.appendChild(userBlock(c, renderAll, list));
 
   const txt = document.createElement("div");
-  txt.className = "comment-text";
   txt.textContent = c.text;
+  txt.className = "editable";
   txt.onclick = () => {
     const v = prompt("Edit comment:", c.text);
-    if (v !== null) { c.text = v; save(); renderAll(); }
+    if (v) { c.text = v; save(); renderAll(); }
   };
 
   d.append(h, txt);
 
   if (c.image) {
-    const img = document.createElement("div");
-    img.className = "comment-image";
-    img.innerHTML = `<img src="${c.image}">`;
-    d.appendChild(img);
+    const i = document.createElement("div");
+    i.className = "comment-image";
+    i.innerHTML = `<img src="${c.image}">`;
+    d.appendChild(i);
   }
 
   const f = document.createElement("div");
@@ -209,17 +193,6 @@ document.getElementById("addCommentBtn").onclick = () => {
   data.post.comments++;
   save(); renderAll();
 };
-
-// Clear all comments (dev-style)
-const clearBtn = document.createElement("button");
-clearBtn.textContent = "🧹 Clear All Comments";
-clearBtn.onclick = () => {
-  if (!confirm("Delete ALL comments?")) return;
-  data.comments = [];
-  data.post.comments = 0;
-  save(); renderAll();
-};
-document.querySelector(".post-container").appendChild(clearBtn);
 
 /* ===== MASTER ===== */
 function renderAll() {

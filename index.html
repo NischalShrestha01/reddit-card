@@ -1,27 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Editable Reddit Card</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Reddit Card</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="post-container">
-
-  <div class="post-header" id="postHeader"></div>
-
-  <div class="post-content" id="postText"></div>
-
+  <div id="postHeader"></div>
+  <div id="postText" class="editable"></div>
   <div class="post-footer">
-    <span class="meta upvotes" id="upvotes"></span>
-    <span class="meta comments" id="commentsCount"></span>
+    <span id="upvotes" class="meta"></span>
+    <span id="commentsCount" class="meta"></span>
   </div>
 
+  <button id="addCommentBtn">Add Comment</button>
   <div id="comments"></div>
-
-  <button id="addCommentBtn">➕ Add Comment</button>
-
 </div>
 
 <script src="script.js"></script>
