@@ -1,17 +1,22 @@
+/* ===== GLOBAL ===== */
 body {
-  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
   background: #0f172a;
   color: #e5e7eb;
+  font-family: Arial, sans-serif;
 }
 
+/* REMOVE FLEX CENTERING (BREAKS MOBILE SCROLL) */
 .post-container {
-  width: 600px;
-  margin: 30px auto;
+  max-width: 600px;
+  margin: 0 auto;
   background: #020617;
-  padding: 15px;
+  padding: 16px;
   border-radius: 10px;
 }
 
+/* ===== USER ===== */
 .user-wrap {
   display: flex;
   align-items: center;
@@ -30,6 +35,7 @@ body {
   font-weight: bold;
 }
 
+/* ===== HOVER MENU ===== */
 .user-menu {
   display: none;
   position: absolute;
@@ -39,6 +45,7 @@ body {
   border-radius: 6px;
   padding: 5px;
   gap: 4px;
+  z-index: 5;
 }
 
 .user-wrap:hover .user-menu {
@@ -52,41 +59,73 @@ body {
   font-size: 14px;
 }
 
-.user-menu button:last-child {
-  color: #ff6b6b;
+/* ===== POST / COMMENT ===== */
+.editable {
+  cursor: pointer;
+  margin-top: 8px;
 }
 
 .comment {
-  margin-top: 10px;
-  padding-left: 15px;
+  margin-top: 12px;
+  padding-left: 14px;
   border-left: 1px solid #334155;
 }
 
-.comment-footer, .post-footer {
+/* ===== FOOTERS ===== */
+.post-footer,
+.comment-footer {
   display: flex;
-  gap: 10px;
-  margin-top: 5px;
+  gap: 12px;
+  margin-top: 6px;
 }
 
 .meta {
   cursor: pointer;
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 .meta:hover {
   opacity: 1;
 }
 
-.comment-image img, .post-image img {
+/* ===== IMAGES ===== */
+.post-image img,
+.comment-image img {
   max-width: 100%;
-  border-radius: 8px;
-  margin-top: 5px;
-}
-
-.replies {
   margin-top: 8px;
+  border-radius: 8px;
 }
 
-.editable {
+/* ===== REPLIES ===== */
+.replies {
+  margin-top: 6px;
+}
+
+/* ===== ADD COMMENT (HOVER-ONLY) ===== */
+#addCommentBtn {
+  margin-top: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  background: #1e293b;
+  color: white;
   cursor: pointer;
+
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+/* Desktop hover */
+.post-container:hover #addCommentBtn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Mobile fallback (no hover devices) */
+@media (hover: none) {
+  #addCommentBtn {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
