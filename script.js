@@ -58,11 +58,22 @@ function userBlock(userObj, rerender) {
   wrap.innerHTML = `
     <img class="pfp" src="${userObj.pfp}">
     <span class="username">${userObj.user}</span>
-    <div class="user-menu">
+    <div class="user-menu" style="display:none; position:absolute;">
       <button class="rand">🎲 Random</button>
       <button class="link">🔗 Set image</button>
     </div>
   `;
+
+  const avatar = wrap.querySelector(".pfp");
+  const menu = wrap.querySelector(".user-menu");
+
+  // Show buttons on hover
+  wrap.addEventListener("mouseenter", () => {
+    menu.style.display = "inline-block";
+  });
+  wrap.addEventListener("mouseleave", () => {
+    menu.style.display = "none";
+  });
 
   // Randomize username + pfp
   wrap.querySelector(".rand").onclick = () => {
@@ -84,6 +95,7 @@ function userBlock(userObj, rerender) {
 
   return wrap;
 }
+
 
 /* ===== RENDER POST ===== */
 function renderPost() {
