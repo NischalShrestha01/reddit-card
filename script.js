@@ -1,6 +1,30 @@
 const NAMES = [
-  "u/ghost_logic", "u/voidthinker", "u/midnightdev",
-  "u/signalnoise", "u/404brain", "u/halfawake"
+  "u/ghost_logic", "u/voidsignal", "u/midnightdev", "u/404brain",
+  "u/halfwired", "u/packet_loss", "u/bitrot", "u/nullpointer",
+  "u/cache_miss", "u/stacktrace", "u/segfaulted", "u/runtime_error",
+  "u/logic_leak", "u/darkterminal", "u/sudo_user", "u/rootless",
+  "u/forkbomb", "u/byte_me", "u/kernelpanic", "u/hexadecimator",
+
+  "u/latent_thought", "u/quietprocess", "u/asyncdreams", "u/idlethread",
+  "u/backgroundtask", "u/signalnoise", "u/echo_buffer", "u/overflowed",
+  "u/pointer_void", "u/undefinedbehave", "u/bitshifted", "u/loop_forever",
+  "u/offbyone", "u/softreset", "u/hardfault", "u/clock_skew",
+
+  "u/lowbandwidth", "u/hiddenlayer", "u/neuralstatic", "u/latentvector",
+  "u/deepcache", "u/entropy_pool", "u/randomseed", "u/chaos_engine",
+  "u/fuzzylogic", "u/noisychannel", "u/blackboxer", "u/obscuredsignal",
+
+  "u/thoughtbuffer", "u/mindoverflow", "u/silentexception", "u/ghostthread",
+  "u/sleepwalker_io", "u/coldboot", "u/fragmented", "u/memoryleak",
+  "u/pagefault", "u/dirtycache", "u/frozenprocess", "u/zombiepid",
+
+  "u/bitdepth", "u/pixelnoise", "u/dithermind", "u/glitchstate",
+  "u/renderpass", "u/frame_skip", "u/vsync_lost", "u/aliasing_error",
+  "u/lowpolybrain", "u/shaderghost", "u/rastermind", "u/vectorvoid",
+
+  "u/late_night_commit", "u/merge_conflict", "u/rebased", "u/detachedhead",
+  "u/force_pushed", "u/stash_lost", "u/clean_build", "u/failing_tests",
+  "u/redgreenrefactor", "u/commit_amnesia"
 ];
 
 const randomName = () => NAMES[Math.floor(Math.random() * NAMES.length)];
