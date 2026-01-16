@@ -1,119 +1,253 @@
 /* ===== UTILS ===== */
-const NAMES = ["u/ghost_logic","u/voidthinker","u/midnightdev","u/signalnoise","u/404brain"];
-const randomName = () => NAMES[Math.floor(Math.random()*NAMES.length)];
-const randomPfp = () => `https://i.pravatar.cc/50?img=${Math.floor(Math.random()*70)}`;
+const NAMES = ["u/ghost_logic", "u/voidthinker", "u/midnightdev", "u/signalnoise", "u/404brain"];
+const randomName = () => NAMES[Math.floor(Math.random() * NAMES.length)];
+const randomPfp = () => `https://i.pravatar.cc/50?img=${Math.floor(Math.random() * 70)}`;
 
-const DEFAULT = {
-  post: { user:"u/TheDreamingCat", pfp:"https://imgs.search.brave.com/44Rj3zRUvCMxMY8B-miqspb4xQAuyLuKQACoeWwPU8Q/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9tZWRp/YS5pc3RvY2twaG90/by5jb20vaWQvMTI4/OTg4NTg2MS9waG90/by9jdXRlLWdpbmdl/ci1jYXQuanBnP3M9/NjEyeDYxMiZ3PTAm/az0yMCZjPXhYUDMx/dS0xZFNNaTg1cVFs/a2pyMlNDRUgyV3J4/VkhIQU9XQ2NaRlM1/RVU9", text:"Why would the Grim Reaper need a scythe if he can kill people by just touching them?", image:null, upvotes:133, comments:0 },
-  comments:[]
+
+const DEFAULT_DATA = {
+  post: {
+    user: "u/TheDreamingCat",
+    pfp: "https://imgs.search.brave.com/44Rj3zRUvCMxMY8B-miqspb4xQAuyLuKQACoeWwPU8Q/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9tZWRp/YS5pc3RvY2twaG90/by5jb20vaWQvMTI4/OTg4NTg2MS9waG90/by9jdXRlLWdpbmdl/ci1jYXQuanBnP3M9/NjEyeDYxMiZ3PTAm/az0yMCZjPXhYUDMx/dS0xZFNNaTg1cVFs/a2pyMlNDRUgyV3J4/VkhIQU9XQ2NaRlM1/RVU9",
+    text: "Why would the Grim Reaper need a scythe if he can kill people by just touching them?",
+    upvotes: "⬆ 133",
+    commentsCount: "💬 0",
+    image: null
+  },
+  comments: []
 };
 
-/* ===== STORAGE ===== */
-function load() {
-  try {
-    const d = JSON.parse(localStorage.getItem("redditCard"));
-    if(!d || !d.post || !Array.isArray(d.comments)) throw 0;
-    return d;
-  } catch { localStorage.removeItem("redditCard"); return structuredClone(DEFAULT); }
-}
-const data = load();
-const save = ()=>localStorage.setItem("redditCard", JSON.stringify(data));
+const data = JSON.parse(localStorage.getItem("redditCard")) || DEFAULT_DATA;
+const save = () => localStorage.setItem("redditCard", JSON.stringify(data));
 
-/* ===== SAFE EDIT ===== */
-function safeEdit(current,label="Edit") {
-  const v = prompt(label,current);
-  if(v===null) return null;
-  const t = v.trim();
-  return t==="" ? null : t;
-}
+const imageInput = document.createElement("input");
+imageInput.type = "file";
+imageInput.accept = "image/*";
+imageInput.hidden = true;
+document.body.appendChild(imageInput);
 
-/* ===== COMMENT COUNT ===== */
-function totalComments(list){ return list.reduce((a,c)=>a+1+totalComments(c.replies||[]),0); }
+function userBlock(userObj, rerender, allowImage = false) {
+  const wrap = document.createElement("div");
+  wrap.className = "user-wrap";
 
-/* ===== DELETE HELPER ===== */
-function deleteNode(list,node){ const i=list.indexOf(node); if(i!==-1) list.splice(i,1); }
+  wrap.innerHTML = `
+  <img class="pfp" src="${userObj.pfp}">
+  <span class="username">${userObj.user}</span>
+  <div class="user-menu">
+    <button class="rand">🎲</button>
+    <button class="name">✏</button>
+    <button class="img">🖼</button>
+    <button class="link">🔗</button>
+    <button class="del">🗑</button>
+    <button class="rmimg">❌</button>
 
-/* ===== USER BLOCK ===== */
-function userBlock(obj, rerender, parent=null){
-  const w = document.createElement("div");
-  w.className="user-wrap";
-  w.innerHTML = `
-    <img class="pfp" src="${obj.pfp}">
-    <span class="username">${obj.user}</span>
-    <div class="user-menu">
-      <button title="Random">🎲</button>
-      <button title="Avatar">🔗</button>
-      <button title="Image">🖼</button>
-      ${parent?`<button title="Delete">🗑</button>`:""}
-    </div>
-  `;
-  w.querySelector(".username").onclick=()=>{
-    const v=safeEdit(obj.user,"Edit username:");
-    if(v){obj.user=v; save(); rerender();}
-  };
-  const [rnd,ava,img,del] = w.querySelectorAll("button");
-  rnd.onclick=()=>{ obj.user=randomName(); obj.pfp=randomPfp(); save(); rerender(); };
-  ava.onclick=()=>{ const u=prompt("Avatar URL:"); if(u){obj.pfp=u; save(); rerender();} };
-  img.onclick=()=>{ const i=prompt("Image URL (empty removes):"); if(i!==null){obj.image=i||null; save(); rerender();} };
-  if(del){del.onclick=()=>{ if(!confirm("Delete?")) return; deleteNode(parent,obj); save(); rerender(); }};
-  return w;
-}
+  </div>
+`;
+  const menu = wrap.querySelector(".user-menu");
+  const avatar = wrap.querySelector(".pfp");
+  const name = wrap.querySelector(".username");
+  menu.onclick = e => e.stopPropagation();
 
-/* ===== POST ===== */
-function renderPost(){
-  const h=document.getElementById("postHeader"); h.innerHTML=""; h.appendChild(userBlock(data.post,renderAll));
-  const t=document.getElementById("postText"); t.textContent=data.post.text;
-  t.onclick=()=>{ const v=safeEdit(data.post.text,"Edit post:"); if(v){data.post.text=v; save(); renderPost();} };
-
-  document.querySelector(".post-image")?.remove();
-  if(data.post.image){
-    const i=document.createElement("div");
-    i.className="post-image"; i.innerHTML=`<img src="${data.post.image}">`; t.after(i);
+  function toggleMenu(e) {
+    e.stopPropagation();
+    wrap.classList.toggle("active");
   }
 
-  const u=document.getElementById("upvotes"); u.textContent=`⬆ ${data.post.upvotes}`;
-  u.onclick=()=>{ const v=safeEdit(data.post.upvotes,"Upvotes:"); if(!isNaN(v)){data.post.upvotes=+v; save(); renderPost();} };
-  document.getElementById("commentsCount").textContent=`💬 ${totalComments(data.comments)}`;
+  avatar.onclick = toggleMenu;
+  name.onclick = toggleMenu;
+
+
+  wrap.querySelector(".rand").onclick = () => {
+    userObj.user = randomName();
+    userObj.pfp = randomPfp();
+    save(); rerender();
+  };
+
+  wrap.querySelector(".name").onclick = () => {
+    const v = prompt("Username:", userObj.user);
+    if (v) { userObj.user = v; save(); rerender(); }
+  };
+
+
+  wrap.querySelector(".rmimg").onclick = () => {
+    if (allowImage) {
+      data.post.image = null;
+    } else {
+      userObj.pfp = randomPfp();
+    }
+    save();
+    rerender();
+  };
+
+  wrap.querySelector(".img").onclick = () => {
+    imageInput.onchange = () => {
+      const r = new FileReader();
+      r.onload = () => {
+        if (allowImage) data.post.image = r.result;
+        else userObj.pfp = r.result;
+        save(); rerender();
+      };
+      r.readAsDataURL(imageInput.files[0]);
+    };
+    imageInput.click();
+  };
+  wrap.querySelector(".link").onclick = () => {
+    const url = prompt("Paste image URL:");
+    if (!url) return;
+
+    if (allowImage) {
+      data.post.image = url;
+    } else {
+      userObj.pfp = url;
+    }
+
+    save();
+    rerender();
+  };
+
+
+  wrap.querySelector(".del").onclick = () => {
+    if (confirm("Delete?")) userObj._delete();
+  };
+
+  return wrap;
 }
 
-/* ===== COMMENTS ===== */
-function renderComment(c,list){
-  const d=document.createElement("div"); d.className="comment";
-  const h=document.createElement("div"); h.appendChild(userBlock(c,renderAll,list));
-  const txt=document.createElement("div"); txt.className="editable"; txt.textContent=c.text;
-  txt.onclick=()=>{ const v=safeEdit(c.text,"Edit comment:"); if(v){c.text=v; save(); renderAll();} };
-  d.append(h,txt);
-  if(c.image){ const i=document.createElement("div"); i.className="comment-image"; i.innerHTML=`<img src="${c.image}">`; d.appendChild(i);}
-  const f=document.createElement("div"); f.className="comment-footer";
-  const up=document.createElement("span"); up.className="meta"; up.textContent=`⬆ ${c.upvotes}`;
-  up.onclick=()=>{ const v=safeEdit(c.upvotes,"Upvotes:"); if(!isNaN(v)){c.upvotes=+v; save(); renderAll();} };
-  const cm=document.createElement("span"); cm.className="meta"; cm.textContent=`💬 ${c.replies.length}`;
-  cm.onclick=()=>{ c.replies.push({ user:randomName(), pfp:randomPfp(), text:"New reply", image:null, upvotes:0, replies:[] }); save(); renderAll(); };
-  f.append(up,cm); d.appendChild(f);
-  const r=document.createElement("div"); r.className="replies"; c.replies.forEach(x=>r.appendChild(renderComment(x,c.replies))); d.appendChild(r);
-  return d;
+function renderPost() {
+  const h = document.getElementById("postHeader");
+  h.innerHTML = "";
+  h.appendChild(userBlock(data.post, renderAll, true));
+
+  postText.textContent = data.post.text;
+  upvotes.textContent = data.post.upvotes;
+  commentsCount.textContent = data.post.commentsCount;
+
+  c.upvotes = c.upvotes || 1;  // default 1
+
+  postText.onclick = () => {
+    const v = prompt("Edit post:", data.post.text);
+    if (v) { data.post.text = v; save(); renderPost(); }
+  };
+
+  upvotes.onclick = () => {
+    const v = prompt("Upvotes:", data.post.upvotes);
+    if (v) { data.post.upvotes = v; save(); renderPost(); }
+  };
+
+  commentsCount.onclick = () => {
+    const v = prompt("Comments:", data.post.commentsCount);
+    if (v) { data.post.commentsCount = v; save(); renderPost(); }
+  };
+
+  const img = document.getElementById("postImage");
+  img.style.display = data.post.image ? "block" : "none";
+  img.src = data.post.image || "";
+
+  const upEl = document.getElementById("upvotes");
+  const cmEl = document.getElementById("commentsCount");
+
+  upEl.textContent = data.post.upvotes;
+  cmEl.textContent = data.post.commentsCount;
+
+  // Make them editable again
+  upEl.onclick = () => {
+    const v = prompt("Edit upvotes:", data.post.upvotes.replace("⬆ ", ""));
+    if (v !== null) {
+      data.post.upvotes = `⬆ ${v}`;
+      save();
+      renderPost();
+    }
+  };
+
+  cmEl.onclick = () => {
+    const v = prompt("Edit comments count:", data.post.commentsCount.replace("💬 ", ""));
+    if (v !== null) {
+      data.post.commentsCount = `💬 ${v}`;
+      save();
+      renderPost();
+    }
+  };
+
 }
 
-function renderComments(){ const c=document.getElementById("comments"); c.innerHTML=""; data.comments.forEach(x=>c.appendChild(renderComment(x,data.comments))); }
+function renderComments(list, container) {
+  list.forEach(c => {
+    const div = document.createElement("div");
+    div.className = "comment";
 
-/* ===== ADD COMMENT ===== */
-document.getElementById("addCommentBtn").onclick=()=>{
-  data.comments.push({ user:randomName(), pfp:randomPfp(), text:"New comment", image:null, upvotes:0, replies:[] });
+    c._delete = () => {
+      const i = list.indexOf(c);
+      list.splice(i, 1);
+      save(); renderAll();
+    };
+
+    const header = document.createElement("div");
+    header.className = "comment-header";
+    header.appendChild(userBlock(c, renderAll));
+
+    const text = document.createElement("div");
+    text.className = "comment-text";
+    text.textContent = c.text;
+    text.onclick = () => {
+      const v = prompt("Edit comment:", c.text);
+      if (v) { c.text = v; save(); renderAll(); }
+    };
+
+    const footer = document.createElement("div");
+    footer.className = "comment-footer";
+    footer.innerHTML = `⬆ ${c.upvotes || 1} 💬 ${c.replies.length} `;
+
+    footer.onclick = () => {
+      c.replies.push({
+        user: randomName(),
+        pfp: randomPfp(),
+        text: "Reply",
+        replies: []
+      });
+      save(); renderAll();
+    };
+
+    div.append(header, text, footer);
+
+    if (c.replies.length) {
+      const replies = document.createElement("div");
+      replies.className = "replies";
+      renderComments(c.replies, replies);
+      div.appendChild(replies);
+    }
+
+    container.appendChild(div);
+  });
+}
+
+function renderAll() {
+  renderPost();
+  const c = document.getElementById("comments");
+  c.innerHTML = "";
+  renderComments(data.comments, c);
+}
+
+addCommentBtn.onclick = () => {
+  data.comments.push({
+    user: randomName(),
+    pfp: randomPfp(),
+    text: "New comment",
+    replies: []
+  });
+  data.post.commentsCount = `💬 ${data.comments.length} `;
   save(); renderAll();
 };
 
-/* ===== CLEAR COMMENTS ===== */
-document.getElementById("clearCommentsBtn").onclick=()=>{
-  if(confirm("Clear all comments?")){ data.comments=[]; save(); renderAll(); }
+clearCommentsBtn.onclick = () => {
+  if (confirm("Clear all comments?")) {
+    data.comments = [];
+    data.post.commentsCount = "💬 0";
+    save(); renderAll();
+  }
 };
-
-/* ===== TOUCH HOVER ===== */
-document.addEventListener("touchstart", e=>{
-  const uw=e.target.closest(".user-wrap"); if(!uw) return;
-  uw.classList.add("force-hover");
-  setTimeout(()=>uw.classList.remove("force-hover"),1500);
+document.addEventListener("click", () => {
+  document.querySelectorAll(".user-wrap.active")
+    .forEach(w => w.classList.remove("active"));
 });
 
-/* ===== MASTER RENDER ===== */
-function renderAll(){ renderPost(); renderComments(); }
+
 renderAll();

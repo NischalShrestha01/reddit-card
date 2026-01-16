@@ -1,106 +1,154 @@
-/* ===== GLOBAL ===== */
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
 body {
-  margin: 0;
-  padding: 20px;
-  background: #0f172a;
-  color: #e5e7eb;
-  font-family: Arial, sans-serif;
+  background: #030303;
+  color: #d7dadc;
+  display: flex;
+  justify-content: center;
+  padding: 40px;
 }
 
 .post-container {
-  max-width: 600px;
-  margin: 0 auto;
-  background: #020617;
+  background: #1a1a1b;
+  width: 520px;
+  border-radius: 8px;
   padding: 16px;
-  border-radius: 10px;
-  position: relative;
 }
 
-/* ===== USER WRAP ===== */
-.user-wrap {
+.post-header,
+.comment-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  position: relative;
-}
-.pfp {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-}
-.username {
-  cursor: pointer;
-  font-weight: bold;
+  gap: 10px;
 }
 
-/* ===== HOVER MENU ===== */
-.user-menu {
-  display: none;
-  position: absolute;
-  left: 40px;
-  top: 32px;
-  background: #020617;
-  border-radius: 6px;
-  padding: 5px;
-  gap: 4px;
-  z-index: 5;
+.pfp {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
 }
-.user-wrap:hover .user-menu { display: flex; }
-.user-wrap.force-hover .user-menu { display: flex; }
+
+.username {
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+}
+
+.post-content {
+  margin-top: 12px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.post-footer {
+  margin-top: 10px;
+  display: flex;
+  gap: 20px;
+  color: #818384;
+}
+
+.post-image {
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-top: 10px;
+  display: none;
+}
+
+.comment {
+  border-top: 1px solid #343536;
+  margin-top: 12px;
+  padding-top: 10px;
+}
+
+.comment-text {
+  margin-left: 50px;
+  margin-top: 4px;
+  cursor: pointer;
+}
+
+.comment-footer {
+  margin-left: 50px;
+  margin-top: 6px;
+  display: flex;
+  gap: 12px;
+  color: #818384;
+  cursor: pointer;
+}
+
+.replies {
+  margin-left: 40px;
+}
+
+.user-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.user-menu {
+  position: absolute;
+  top: 45px;
+  left: 0;
+  display: flex;
+  gap: 6px;
+  background: #272729;
+  border: 1px solid #343536;
+  border-radius: 6px;
+  padding: 4px;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.user-wrap.active .user-menu {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+
 .user-menu button {
   background: none;
   border: none;
+  color: #d7dadc;
+  font-size: 12px;
   cursor: pointer;
-  font-size: 14px;
+  padding: 4px 6px;
 }
 
-/* ===== POST / COMMENT ===== */
-.editable { cursor: pointer; margin-top: 8px; }
-.comment { margin-top: 12px; padding-left: 14px; border-left: 1px solid #334155; }
-.post-footer, .comment-footer { display: flex; gap: 12px; margin-top: 6px; }
-.meta { cursor: pointer; opacity: 0.85; }
-.meta:hover { opacity: 1; }
-
-/* ===== IMAGES ===== */
-.post-image img, .comment-image img { max-width: 100%; margin-top: 8px; border-radius: 8px; }
-
-/* ===== REPLIES ===== */
-.replies { margin-top: 6px; }
-
-/* ===== ADD COMMENT BUTTON ===== */
-#addCommentBtn {
-  display: block;
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: none;
-  background: #1e293b;
-  color: white;
-  cursor: pointer;
-  height: 0; margin: 0; padding-top: 0; padding-bottom: 0;
-  opacity: 0; pointer-events: none; transform: translateY(-6px);
-  transition: all 0.2s ease; overflow: hidden;
-}
-.post-container:hover #addCommentBtn {
-  height: auto; margin-top: 12px; padding-top: 6px; padding-bottom: 6px;
-  opacity: 1; pointer-events: auto; transform: translateY(0);
-}
-@media (hover: none) {
-  #addCommentBtn {
-    height: auto; margin-top: 12px; padding-top: 6px; padding-bottom: 6px;
-    opacity: 1; pointer-events: auto; transform: none;
-  }
+.user-menu button:hover {
+  background: #343536;
+  border-radius: 4px;
 }
 
-/* ===== CLEAR COMMENTS BUTTON ===== */
-#clearCommentsBtn {
-  display: block;
-  padding: 6px 10px;
+.comment-actions {
   margin-top: 12px;
-  border-radius: 6px;
-  border: none;
-  background: #8b0000;
+  display: flex;
+  gap: 10px;
+  opacity: 0;
+  height: 0;
+  overflow: hidden;
+  transition: opacity 0.2s ease;
+}
+
+.post-container:hover .comment-actions {
+  opacity: 1;
+  height: auto;
+}
+
+button {
+  background: #272729;
   color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
   cursor: pointer;
 }
-#clearCommentsBtn:hover { background: #ff4c4c; }

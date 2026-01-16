@@ -1,34 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Editable Reddit Card</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
 <div class="post-container">
-  <!-- Post Header -->
-  <div id="postHeader"></div>
 
-  <!-- Post Content -->
-  <div id="postText" class="editable"></div>
+  <div class="post-header" id="postHeader"></div>
 
-  <!-- Post Footer -->
+  <div class="post-content" id="postText"></div>
+  <img id="postImage" class="post-image" />
+
   <div class="post-footer">
-    <span id="upvotes" class="meta"></span>
-    <span id="commentsCount" class="meta"></span>
+    <span id="upvotes" class="editable"></span>
+    <span id="commentsCount" class="editable"></span>
   </div>
 
-  <!-- Add Comment -->
-  <button id="addCommentBtn">➕ Add Comment</button>
-
-  <!-- Comments -->
   <div id="comments"></div>
 
-  <!-- Clear All Comments -->
-  <button id="clearCommentsBtn">🗑 Clear All Comments</button>
+  <div class="comment-actions">
+    <button id="addCommentBtn">➕ Add Comment</button>
+    <button id="clearCommentsBtn">🗑 Clear All</button>
+  </div>
+
 </div>
 
 <script src="script.js"></script>
