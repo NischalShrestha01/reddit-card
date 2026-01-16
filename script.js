@@ -7,32 +7,41 @@ const randomName = () => NAMES[Math.floor(Math.random() * NAMES.length)];
 const randomPfp = () => `https://i.pravatar.cc/50?img=${Math.floor(Math.random() * 70)}`;
 
 const DEFAULT_DATA = {
+  theme: "dark",
   post: {
     user: "u/TheDreamingCat",
-    pfp: "https://yt3.ggpht.com/OfYN7fLx7o5s-VjtJ7vRyTylZ9o7oMfA1IevNDymtmvfgLfZr3PnoAuyLb-AZcPboue2Sx9F=s600-c-k-c0x00ffffff-no-rj-rp-mo",
+    pfp: "https://i.pravatar.cc/50?img=12",
     text: "Why would the Grim Reaper need a scythe if he can kill people by just touching them?",
     upvotes: "⬆ 133",
     commentsCount: "💬 0",
-    image: null
-  },
+    image: null,
+    imageSize: "medium",
+    imageWidth: "",
+    imageHeight: ""
+  }
+  ,
   comments: []
 };
 
 const data = JSON.parse(localStorage.getItem("redditCard")) || DEFAULT_DATA;
 const save = () => localStorage.setItem("redditCard", JSON.stringify(data));
 
+/* ---------------- THEME ---------------- */
+document.body.dataset.theme = data.theme;
+document.getElementById("themeToggle").onclick = () => {
+  data.theme = data.theme === "dark" ? "light" : "dark";
+  document.body.dataset.theme = data.theme;
+  save();
+};
+
+/* ---------------- CLICK CLOSE MENUS ---------------- */
 document.addEventListener("click", () => {
   document.querySelectorAll(".user-wrap.active")
     .forEach(w => w.classList.remove("active"));
 });
 
-const imageInput = document.createElement("input");
-imageInput.type = "file";
-imageInput.accept = "image/*";
-imageInput.hidden = true;
-document.body.appendChild(imageInput);
-
-function userBlock(userObj, rerender, allowImage = false) {
+/* ---------------- USER BLOCK ---------------- */
+function userBlock(userObj, rerender, isPost = false) {
   const wrap = document.createElement("div");
   wrap.className = "user-wrap";
 
@@ -42,62 +51,121 @@ function userBlock(userObj, rerender, allowImage = false) {
     <div class="user-menu">
       <button class="rand">🎲</button>
       <button class="name">✏</button>
-      <button class="img">🖼</button>
-      <button class="link">🔗</button>
-      <button class="rmimg">❌</button>
+      <button class="pfpUpload">🖼 PFP</button>
+      <button class="pfpLink">🔗 PFP</button>
+      ${isPost ? `
+        <button class="postUpload">🖼 POST</button>
+        <button class="postLink">🔗 POST</button>
+        <button class="resize">📐 Preset</button>
+        <button class="freeResize">↔ Resize</button>
+        <button class="removePost">❌ Remove</button>
+      ` : ""}
+      
       <button class="del">🗑</button>
     </div>
   `;
 
-  const menu = wrap.querySelector(".user-menu");
+  wrap.onclick = e => e.stopPropagation();
   wrap.querySelector(".pfp").onclick =
-    wrap.querySelector(".username").onclick = e => {
-      e.stopPropagation();
+    wrap.querySelector(".username").onclick = () =>
       wrap.classList.toggle("active");
-    };
 
-  menu.onclick = e => e.stopPropagation();
-
+  /* RANDOM */
   wrap.querySelector(".rand").onclick = () => {
     userObj.user = randomName();
     userObj.pfp = randomPfp();
     save(); rerender();
   };
 
+  /* NAME */
   wrap.querySelector(".name").onclick = () => {
     const v = prompt("Username:", userObj.user);
     if (v) { userObj.user = v; save(); rerender(); }
   };
 
-  wrap.querySelector(".img").onclick = () => {
-    imageInput.onchange = () => {
-      const f = imageInput.files[0];
+  /* PFP UPLOAD */
+  wrap.querySelector(".pfpUpload").onclick = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = () => {
+      const f = input.files[0];
       if (!f) return;
       const r = new FileReader();
       r.onload = () => {
-        if (allowImage) data.post.image = r.result;
-        else userObj.pfp = r.result;
+        userObj.pfp = r.result;
         save(); rerender();
       };
       r.readAsDataURL(f);
     };
-    imageInput.click();
+    input.click();
   };
 
-  wrap.querySelector(".link").onclick = () => {
-    const url = prompt("Paste image URL:");
-    if (!url) return;
-    if (allowImage) data.post.image = url;
-    else userObj.pfp = url;
-    save(); rerender();
+  /* PFP LINK */
+  wrap.querySelector(".pfpLink").onclick = () => {
+    const url = prompt("Paste PFP URL:");
+    if (url) { userObj.pfp = url; save(); rerender(); }
   };
 
-  wrap.querySelector(".rmimg").onclick = () => {
-    if (allowImage) data.post.image = null;
-    else userObj.pfp = randomPfp();
-    save(); rerender();
-  };
+  if (isPost) {
+    /* POST IMAGE UPLOAD */
+    wrap.querySelector(".postUpload").onclick = () => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.onchange = () => {
+        const f = input.files[0];
+        if (!f) return;
+        const r = new FileReader();
+        r.onload = () => {
+          data.post.image = r.result;
+          save(); rerender();
+        };
+        r.readAsDataURL(f);
+      };
+      input.click();
+    };
 
+    /* POST IMAGE LINK */
+    wrap.querySelector(".postLink").onclick = () => {
+      const url = prompt("Paste post image URL:");
+      if (url) { data.post.image = url; save(); rerender(); }
+    };
+
+    /* IMAGE RESIZE */
+    wrap.querySelector(".resize").onclick = () => {
+      const v = prompt("Image size: small / medium / large", data.post.imageSize);
+      if (["small", "medium", "large"].includes(v)) {
+        data.post.imageSize = v;
+        save(); rerender();
+      }
+    };
+    wrap.querySelector(".freeResize").onclick = () => {
+      const w = prompt("Image width (px or %, blank = auto):", data.post.imageWidth);
+      const h = prompt("Image height (px or auto):", data.post.imageHeight);
+
+      data.post.imageWidth = w ?? "";
+      data.post.imageHeight = h ?? "";
+
+      save();
+      rerender();
+    };
+
+    wrap.querySelector(".removePost").onclick = () => {
+      if (!data.post.image) return;
+
+      if (confirm("Remove post image?")) {
+        data.post.image = null;
+        data.post.imageWidth = "";
+        data.post.imageHeight = "";
+        save();
+        rerender();
+      }
+    };
+
+  }
+
+  /* DELETE */
   wrap.querySelector(".del").onclick = () => {
     if (userObj._delete && confirm("Delete?")) userObj._delete();
   };
@@ -105,6 +173,7 @@ function userBlock(userObj, rerender, allowImage = false) {
   return wrap;
 }
 
+/* ---------------- POST ---------------- */
 function renderPost() {
   postHeader.innerHTML = "";
   postHeader.appendChild(userBlock(data.post, renderAll, true));
@@ -118,30 +187,18 @@ function renderPost() {
   upvotes.textContent = data.post.upvotes;
   commentsCount.textContent = data.post.commentsCount;
 
-  upvotes.onclick = () => {
-    const v = prompt("Upvotes:", data.post.upvotes.replace("⬆ ", ""));
-    if (v !== null) {
-      data.post.upvotes = `⬆ ${v}`;
-      save(); renderPost();
-    }
-  };
-
-  commentsCount.onclick = () => {
-    const v = prompt("Comments:", data.post.commentsCount.replace("💬 ", ""));
-    if (v !== null) {
-      data.post.commentsCount = `💬 ${v}`;
-      save(); renderPost();
-    }
-  };
-
   postImage.style.display = data.post.image ? "block" : "none";
   postImage.src = data.post.image || "";
+  postImage.className = `post-image ${data.post.imageSize}`;
+  postImage.style.width = data.post.imageWidth || "";
+  postImage.style.height = data.post.imageHeight || "";
 }
 
+/* ---------------- COMMENTS ---------------- */
 function renderComments(list, container) {
   list.forEach(c => {
-    c.upvotes ??= 1;
     c.replies ??= [];
+    c.upvotes ??= 1;
 
     const div = document.createElement("div");
     div.className = "comment";
@@ -151,48 +208,12 @@ function renderComments(list, container) {
       save(); renderAll();
     };
 
-    const header = document.createElement("div");
-    header.className = "comment-header";
-    header.appendChild(userBlock(c, renderAll));
+    div.appendChild(userBlock(c, renderAll));
 
     const text = document.createElement("div");
     text.className = "comment-text";
     text.textContent = c.text;
-    text.onclick = () => {
-      const v = prompt("Edit comment:", c.text);
-      if (v) { c.text = v; save(); renderAll(); }
-    };
-
-    const footer = document.createElement("div");
-    footer.className = "comment-footer";
-
-    const up = document.createElement("span");
-    up.textContent = `⬆ ${c.upvotes}`;
-    up.onclick = e => {
-      e.stopPropagation();
-      const v = prompt("Upvotes:", c.upvotes);
-      if (v !== null) {
-        c.upvotes = Number(v) || c.upvotes;
-        save(); renderAll();
-      }
-    };
-
-    const rep = document.createElement("span");
-    rep.textContent = `💬 ${c.replies.length}`;
-    rep.onclick = e => {
-      e.stopPropagation();
-      c.replies.push({
-        user: randomName(),
-        pfp: randomPfp(),
-        text: "Reply",
-        upvotes: 1,
-        replies: []
-      });
-      save(); renderAll();
-    };
-
-    footer.append(up, rep);
-    div.append(header, text, footer);
+    div.appendChild(text);
 
     if (c.replies.length) {
       const r = document.createElement("div");
@@ -210,25 +231,5 @@ function renderAll() {
   comments.innerHTML = "";
   renderComments(data.comments, comments);
 }
-
-addCommentBtn.onclick = () => {
-  data.comments.push({
-    user: randomName(),
-    pfp: randomPfp(),
-    text: "New comment",
-    upvotes: 1,
-    replies: []
-  });
-  data.post.commentsCount = `💬 ${data.comments.length}`;
-  save(); renderAll();
-};
-
-clearCommentsBtn.onclick = () => {
-  if (confirm("Clear all comments?")) {
-    data.comments = [];
-    data.post.commentsCount = "💬 0";
-    save(); renderAll();
-  }
-};
 
 renderAll();
