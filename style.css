@@ -48,6 +48,7 @@ body {
   display: flex;
   gap: 20px;
   color: #818384;
+  font-weight: bold;
 }
 
 .post-image {
@@ -77,6 +78,9 @@ body {
   display: flex;
   gap: 12px;
   color: #818384;
+}
+
+.comment-footer span {
   cursor: pointer;
 }
 
@@ -101,11 +105,11 @@ body {
   border: 1px solid #343536;
   border-radius: 6px;
   padding: 4px;
-  z-index: 10;
   opacity: 0;
   pointer-events: none;
   transform: translateY(-4px);
   transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 10;
 }
 
 .user-wrap.active .user-menu {
@@ -113,7 +117,6 @@ body {
   pointer-events: auto;
   transform: translateY(0);
 }
-
 
 .user-menu button {
   background: none;
@@ -136,7 +139,6 @@ body {
   opacity: 0;
   height: 0;
   overflow: hidden;
-  transition: opacity 0.2s ease;
 }
 
 .post-container:hover .comment-actions {
