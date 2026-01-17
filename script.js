@@ -237,6 +237,17 @@ function renderComments(list, container) {
     const text = document.createElement("div");
     text.className = "comment-text";
     text.textContent = c.text;
+
+    // Make replies editable
+    text.onclick = () => {
+      const v = prompt("Edit comment:", c.text);
+      if (v !== null) {
+        c.text = v;
+        save();
+        rerender();
+      }
+    };
+
     div.appendChild(text);
 
     if (c.replies.length) {
