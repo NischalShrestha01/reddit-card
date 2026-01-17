@@ -42,8 +42,7 @@ const DEFAULT_DATA = {
     imageSize: "medium",
     imageWidth: "",
     imageHeight: ""
-  }
-  ,
+  },
   comments: []
 };
 
@@ -186,7 +185,6 @@ function userBlock(userObj, rerender, isPost = false) {
         rerender();
       }
     };
-
   }
 
   /* DELETE */
@@ -197,74 +195,186 @@ function userBlock(userObj, rerender, isPost = false) {
   return wrap;
 }
 
+/* ---------------- COMMENT FUNCTIONS ---------------- */
+function createComment(text = "New comment", parentList = data.comments, isReply = false) {
+  const comment = {
+    user: randomName(),
+    pfp: randomPfp(),
+    text: text,
+    upvotes: 1,
+    replies: []
+  };
+
+  // Add _delete method to comment
+  comment._delete = function () {
+    const index = parentList.indexOf(this);
+    if (index > -1) {
+      parentList.splice(index, 1);
+      save();
+      renderAll();
+    }
+  };
+
+  parentList.push(comment);
+  save();
+  return comment;
+}
+
+function renderComment(comment, container, parentList) {
+  const commentDiv = document.createElement("div");
+  commentDiv.className = "comment";
+
+  // Add user block
+  const userBlockEl = userBlock(comment, renderAll);
+  commentDiv.appendChild(userBlockEl);
+
+  // Add comment text
+  const textDiv = document.createElement("div");
+  textDiv.className = "comment-text";
+  textDiv.textContent = comment.text;
+  textDiv.onclick = () => {
+    const newText = prompt("Edit comment:", comment.text);
+    if (newText !== null) {
+      comment.text = newText;
+      save();
+      renderAll();
+    }
+  };
+  commentDiv.appendChild(textDiv);
+
+  // Add comment actions
+  const actionsDiv = document.createElement("div");
+  actionsDiv.className = "comment-actions";
+  actionsDiv.innerHTML = `
+    <button class="reply-btn">↩ Reply</button>
+    <button class="upvote-btn">⬆ ${comment.upvotes}</button>
+    <button class="delete-btn">🗑</button>
+  `;
+
+  // Reply functionality
+  actionsDiv.querySelector(".reply-btn").onclick = () => {
+    const replyText = prompt("Enter your reply:");
+    if (replyText) {
+      createComment(replyText, comment.replies, true);
+      renderAll();
+    }
+  };
+
+  // Upvote functionality
+  actionsDiv.querySelector(".upvote-btn").onclick = () => {
+    comment.upvotes = (comment.upvotes || 1) + 1;
+    save();
+    renderAll();
+  };
+
+  // Delete functionality
+  actionsDiv.querySelector(".delete-btn").onclick = () => {
+    if (confirm("Delete this comment?")) {
+      comment._delete();
+    }
+  };
+
+  commentDiv.appendChild(actionsDiv);
+
+  // Render replies if they exist
+  if (comment.replies && comment.replies.length > 0) {
+    const repliesDiv = document.createElement("div");
+    repliesDiv.className = "replies";
+    comment.replies.forEach(reply => {
+      renderComment(reply, repliesDiv, comment.replies);
+    });
+    commentDiv.appendChild(repliesDiv);
+  }
+
+  container.appendChild(commentDiv);
+}
+
 /* ---------------- POST ---------------- */
 function renderPost() {
+  const postHeader = document.getElementById("postHeader");
+  const postText = document.getElementById("postText");
+  const upvotes = document.getElementById("upvotes");
+  const commentsCount = document.getElementById("commentsCount");
+  const postImage = document.getElementById("postImage");
+
   postHeader.innerHTML = "";
   postHeader.appendChild(userBlock(data.post, renderAll, true));
 
   postText.textContent = data.post.text;
   postText.onclick = () => {
     const v = prompt("Edit post:", data.post.text);
-    if (v) { data.post.text = v; save(); renderPost(); }
+    if (v) {
+      data.post.text = v;
+      save();
+      renderPost();
+    }
   };
 
   upvotes.textContent = data.post.upvotes;
+  upvotes.onclick = () => {
+    const match = data.post.upvotes.match(/\d+/);
+    const current = match ? parseInt(match[0]) : 133;
+    const newUpvotes = prompt("Enter new upvote count:", current);
+    if (newUpvotes !== null && !isNaN(newUpvotes)) {
+      data.post.upvotes = `⬆ ${newUpvotes}`;
+      save();
+      renderPost();
+    }
+  };
+
+  // Calculate total comments count
+  let totalComments = 0;
+  function countComments(comments) {
+    totalComments += comments.length;
+    comments.forEach(c => {
+      if (c.replies) {
+        countComments(c.replies);
+      }
+    });
+  }
+  countComments(data.comments);
+  data.post.commentsCount = `💬 ${totalComments}`;
   commentsCount.textContent = data.post.commentsCount;
 
+  // Handle post image
   postImage.style.display = data.post.image ? "block" : "none";
-  postImage.src = data.post.image || "";
-  postImage.className = `post-image ${data.post.imageSize}`;
-  postImage.style.width = data.post.imageWidth || "";
-  postImage.style.height = data.post.imageHeight || "";
+  if (data.post.image) {
+    postImage.src = data.post.image;
+    postImage.className = `post-image ${data.post.imageSize}`;
+    postImage.style.width = data.post.imageWidth || "";
+    postImage.style.height = data.post.imageHeight || "";
+  }
 }
 
-/* ---------------- COMMENTS ---------------- */
-function renderComments(list, container) {
-  list.forEach(c => {
-    c.replies ??= [];
-    c.upvotes ??= 1;
+/* ---------------- RENDER ALL ---------------- */
+function renderAll() {
+  renderPost();
 
-    const div = document.createElement("div");
-    div.className = "comment";
+  const commentsContainer = document.getElementById("comments");
+  commentsContainer.innerHTML = "";
 
-    c._delete = () => {
-      list.splice(list.indexOf(c), 1);
-      save(); renderAll();
-    };
-
-    div.appendChild(userBlock(c, renderAll));
-
-    const text = document.createElement("div");
-    text.className = "comment-text";
-    text.textContent = c.text;
-
-    // Make replies editable
-    text.onclick = () => {
-      const v = prompt("Edit comment:", c.text);
-      if (v !== null) {
-        c.text = v;
-        save();
-        rerender();
-      }
-    };
-
-    div.appendChild(text);
-
-    if (c.replies.length) {
-      const r = document.createElement("div");
-      r.className = "replies";
-      renderComments(c.replies, r);
-      div.appendChild(r);
-    }
-
-    container.appendChild(div);
+  // Render all comments
+  data.comments.forEach(comment => {
+    renderComment(comment, commentsContainer, data.comments);
   });
 }
 
-function renderAll() {
-  renderPost();
-  comments.innerHTML = "";
-  renderComments(data.comments, comments);
-}
+/* ---------------- EVENT LISTENERS ---------------- */
+document.getElementById("addCommentBtn").onclick = () => {
+  const commentText = prompt("Enter your comment:");
+  if (commentText) {
+    createComment(commentText);
+    renderAll();
+  }
+};
 
+document.getElementById("clearCommentsBtn").onclick = () => {
+  if (confirm("Clear all comments?")) {
+    data.comments = [];
+    save();
+    renderAll();
+  }
+};
+
+// Initial render
 renderAll();
